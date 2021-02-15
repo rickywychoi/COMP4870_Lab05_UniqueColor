@@ -1,14 +1,15 @@
 'use strict'
 
-// For the color stroke
+// For color stroke
 var r, g, b, a
 
 var connection = new signalR.HubConnectionBuilder()
 .withUrl('/drawDotHub')
 .build()
 
-connection.on('updateDot', function (x, y) {
-  drawDot(x, y, 8)
+// To receive messages from the hub, define a method using the on method
+connection.on('updateDot', function (x, y, r, g, b, a) {
+  drawDot(x, y, 8, r, g, b, a)
 })
 
 connection.on('clearCanvas', function () {
@@ -16,19 +17,19 @@ connection.on('clearCanvas', function () {
 })
 
 connection
-  .start()
-  .then(function () {
-    // Choose random color
-    r = getRandomInt()
-    g = getRandomInt()
-    b = getRandomInt()
-    a = 255
-  })
-  .catch(function (err) {
-    return console.error(err.toString())
-  })
+.start()
+.then(function () {
+  r = getRandomInt()
+  g = getRandomInt()
+  b = getRandomInt()
+  a = 255
+})
+.catch(function (err) {
+  return console.error(err.toString())
+})
 
 function tellServerToClear () {
+  // Call public methods on hub via the invoke method
   connection.invoke('ClearCanvas').catch(function (err) {
     return console.error(err.toString())
   })
@@ -43,11 +44,11 @@ function getRandomInt() {
 var canvas, ctx
 // Variables to keep track of the mouse position and left-button status
 var mouseX,
-  mouseY,
-  mouseDown = 0
+mouseY,
+mouseDown = 0
 // Draws a dot at a specific position on the supplied canvas name
 // Parameters are: A canvas context, the x position, the y position, the size of the dot
-function drawDot (x, y, size) {
+function drawDot (x, y, size, r, g, b, a) {
   // Use randomly chosen color
   ctx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a / 255 + ')'
   // Draw a filled circle
@@ -60,9 +61,9 @@ function drawDot (x, y, size) {
 // Keep track of the mouse button being pressed and draw a dot at current location
 function sketchpad_mouseDown () {
   mouseDown = 1
-  drawDot(mouseX, mouseY, 8)
-
-  connection.invoke('UpdateCanvas', mouseX, mouseY).catch(function (err) {
+  drawDot(mouseX, mouseY, 8, r, g, b, a)
+  
+  connection.invoke('UpdateCanvas', mouseX, mouseY, r, g, b, a).catch(function (err) {
     return console.error(err.toString())
   })
 }
@@ -78,8 +79,8 @@ function sketchpad_mouseMove (e) {
   getMousePos(e)
   // Draw a dot if the mouse button is currently being pressed
   if (mouseDown == 1) {
-    drawDot(mouseX, mouseY, 8)
-    connection.invoke('UpdateCanvas', mouseX, mouseY).catch(function (err) {
+    drawDot(mouseX, mouseY, 8, r, g, b, a)
+    connection.invoke('UpdateCanvas', mouseX, mouseY, r, g, b, a).catch(function (err) {
       return console.error(err.toString())
     })
   }
